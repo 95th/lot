@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use lot::executor::Executor;
+use lot::Executor;
 use reqwest::Client;
 
 #[tokio::main]

@@ -7,7 +7,8 @@ use tokio::{
     time::Instant,
 };
 
-use crate::{scenario::Scenario, timeline::Timeline};
+use crate::task::TaskFactory;
+use crate::timeline::Timeline;
 
 /// The `Executor` is responsible for running the scenarios and collecting the results.
 ///
@@ -56,17 +57,17 @@ impl Executor {
     /// # Arguments
     ///
     /// * `scenario` - The scenario to run.
-    pub async fn run(&self, scenario: impl Scenario) {
+    pub async fn run(&self, task_factory: impl TaskFactory) {
         let (tx, rx) = unbounded_channel();
         let update_stats = self.update_stats(rx);
         let print_progress = self.print_progress();
-        let run_scenario = self.run_scenario(scenario, tx);
+        let run_scenario = self.run_scenario(task_factory, tx);
         tokio::join!(update_stats, print_progress, run_scenario);
     }
 
     async fn run_scenario(
         &self,
-        scenario: impl Scenario,
+        task_factory: impl TaskFactory,
         result_channel: UnboundedSender<Result<()>>,
     ) {
         for (i, timeline) in self.timelines.iter().enumerate() {
@@ -76,7 +77,7 @@ impl Executor {
                 tokio::time::sleep_until(start_time + next_tick).await;
                 self.started.fetch_add(1, Ordering::AcqRel);
                 let result_channel = result_channel.clone();
-                let task = scenario.run();
+                let task = task_factory.create();
                 tokio::spawn(async move {
                     result_channel.send(task.await).unwrap();
                 });

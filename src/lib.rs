@@ -8,6 +8,9 @@
 //! - **Scenario:** A scenario represents a single user's journey through your system.
 //! - **Executor:** The executor is responsible for running the scenarios and collecting the results.
 
-pub mod executor;
-pub mod scenario;
+mod executor;
+mod task;
 mod timeline;
+
+pub use executor::Executor;
+pub use task::TaskFactory;
