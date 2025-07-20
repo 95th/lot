@@ -9,6 +9,11 @@ use tokio::{
 
 use crate::{scenario::Scenario, timeline::Timeline};
 
+/// The `Executor` is responsible for running the scenarios and collecting the results.
+///
+/// It manages the timeline of the load test, spinning up new scenarios as required.
+/// It also collects statistics about the test run, such as the number of started,
+/// successful, and failed scenarios.
 pub struct Executor {
     timelines: Vec<Timeline>,
     stop: AtomicBool,
@@ -18,6 +23,7 @@ pub struct Executor {
 }
 
 impl Executor {
+    /// Creates a new `Executor`.
     pub fn new() -> Self {
         Self {
             timelines: Vec::new(),
@@ -28,11 +34,28 @@ impl Executor {
         }
     }
 
+    /// Adds a new stage to the load test.
+    ///
+    /// A stage is a period of time during which the load is ramped up from a starting
+    /// rate to an ending rate.
+    ///
+    /// # Arguments
+    ///
+    /// * `start_rate` - The number of scenarios to start per second at the beginning of the stage.
+    /// * `end_rate` - The number of scenarios to start per second at the end of the stage.
+    /// * `duration` - The duration of the stage.
     pub fn add_stage(&mut self, start_rate: usize, end_rate: usize, duration: Duration) {
         self.timelines
             .push(Timeline::new(start_rate as f64, end_rate as f64, duration));
     }
 
+    /// Runs the load test.
+    ///
+    /// This will execute all the configured stages in order.
+    ///
+    /// # Arguments
+    ///
+    /// * `scenario` - The scenario to run.
     pub async fn run(&self, scenario: impl Scenario) {
         let (tx, rx) = unbounded_channel();
         let update_stats = self.update_stats(rx);
@@ -60,6 +83,8 @@ impl Executor {
             }
             println!("Stage {i} completed");
         }
+        // Once all stages are complete, the sender is dropped, which will cause the
+        // `update_stats` task to complete.
     }
 
     async fn update_stats(&self, mut result_channel: UnboundedReceiver<Result<()>>) {
