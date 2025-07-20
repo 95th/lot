@@ -10,7 +10,7 @@ To start using `lot`, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lot = "0.1"
+lot = "0.2"
 ```
 
 Then, you can create a test scenario and run it using the `Executor`.
@@ -27,32 +27,11 @@ use lot::scenario::Scenario;
 use reqwest::Client;
 use std::future::Future;
 
-// 1. Define your scenario
-struct CallLocalhost {
-    client: Client,
-}
-
-impl CallLocalhost {
-    fn new() -> Self {
-        Self {
-            client: Client::builder()
-                .danger_accept_invalid_certs(true)
-                .build()
-                .unwrap(),
-        }
-    }
-}
-
-impl Scenario for CallLocalhost {
-    fn run(&self) -> impl Future<Output = Result<()>> + Send + 'static {
-        let client = self.client.clone();
-        async move {
-            let response = client.get("https://localhost:8080").send().await?;
-            let response = response.error_for_status()?;
-            response.bytes().await?;
-            Ok(())
-        }
-    }
+async fn call_localhost(client: Client) -> Result<()> {
+    let response = client.get("https://localhost:8080").send().await?;
+    let response = response.error_for_status()?;
+    response.bytes().await?;
+    Ok(())
 }
 
 // 2. Configure and run the executor
@@ -67,7 +46,8 @@ async fn main() {
     // Ramp down from 100 to 0 rps over 10 seconds
     executor.add_stage(100, 0, Duration::from_secs(10));
 
-    executor.run(CallLocalhost::new()).await;
+    let client = Client::new();
+    executor.run(|| call_localhost(client.clone())).await;
 }
 ```
 
