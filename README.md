@@ -69,8 +69,10 @@ async fn main() {
 
     executor.run(CallLocalhost::new()).await;
 }
+```
 
 This example demonstrates a multi-stage load test:
+
 1.  A ramp-up phase.
 2.  A sustained load phase.
 3.  A ramp-down phase.
@@ -82,4 +84,3 @@ Contributions are welcome! If you have a feature request, bug report, or pull re
 ## License
 
 This project is licensed under the terms of the [LICENSE](LICENSE) file.
-```
