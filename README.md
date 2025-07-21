@@ -17,20 +17,17 @@ Then, you can create a test scenario and run it using the `Executor`.
 
 ## Example
 
-Here's an example of a simple load test that makes HTTP requests to a local server:
+Here's an example of a simple load test that makes invokes an arbitrary scenario function:
 
 ```rust
 use std::time::Duration;
 use anyhow::Result;
 use lot::executor::Executor;
 use lot::scenario::Scenario;
-use reqwest::Client;
-use std::future::Future;
 
-async fn call_localhost(client: Client) -> Result<()> {
-    let response = client.get("https://localhost:8080").send().await?;
-    let response = response.error_for_status()?;
-    response.bytes().await?;
+async fn my_scenario() -> Result<()> {
+    // Add your load testing logic here.
+    // For example: Call HTTP endpoint.
     Ok(())
 }
 
@@ -46,8 +43,7 @@ async fn main() {
     // Ramp down from 100 to 0 rps over 10 seconds
     executor.add_stage(100, 0, Duration::from_secs(10));
 
-    let client = Client::new();
-    executor.run(|| call_localhost(client.clone())).await;
+    executor.run(my_scenario).await;
 }
 ```
 
