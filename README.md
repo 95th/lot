@@ -10,7 +10,7 @@ To start using `lot`, add it to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lot = "0.2"
+lot = "0.3"
 ```
 
 Then, you can create a test scenario and run it using the `Executor`.

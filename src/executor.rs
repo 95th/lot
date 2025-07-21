@@ -7,7 +7,6 @@ use tokio::{
     time::Instant,
 };
 
-use crate::task::TaskFactory;
 use crate::timeline::Timeline;
 
 /// The `Executor` is responsible for running the scenarios and collecting the results.
@@ -56,8 +55,12 @@ impl Executor {
     ///
     /// # Arguments
     ///
-    /// * `scenario` - The scenario to run.
-    pub async fn run(&self, task_factory: impl TaskFactory) {
+    /// * `task_factory` - Creates scenario to run.
+    pub async fn run<F, T>(&self, task_factory: F)
+    where
+        F: Fn() -> T,
+        T: Future<Output = Result<()>> + Send + 'static,
+    {
         let (tx, rx) = unbounded_channel();
         let update_stats = self.update_stats(rx);
         let print_progress = self.print_progress();
@@ -65,11 +68,11 @@ impl Executor {
         tokio::join!(update_stats, print_progress, run_scenario);
     }
 
-    async fn run_scenario(
-        &self,
-        task_factory: impl TaskFactory,
-        result_channel: UnboundedSender<Result<()>>,
-    ) {
+    async fn run_scenario<F, T>(&self, task_factory: F, result_channel: UnboundedSender<Result<()>>)
+    where
+        F: Fn() -> T,
+        T: Future<Output = Result<()>> + Send + 'static,
+    {
         for (i, timeline) in self.timelines.iter().enumerate() {
             println!("Starting stage {i}");
             let start_time = Instant::now();
@@ -77,7 +80,7 @@ impl Executor {
                 tokio::time::sleep_until(start_time + next_tick).await;
                 self.started.fetch_add(1, Ordering::AcqRel);
                 let result_channel = result_channel.clone();
-                let task = task_factory.create();
+                let task = task_factory();
                 tokio::spawn(async move {
                     result_channel.send(task.await).unwrap();
                 });

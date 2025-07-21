@@ -9,8 +9,6 @@
 //! - **Executor:** The executor is responsible for running the scenarios and collecting the results.
 
 mod executor;
-mod task;
 mod timeline;
 
 pub use executor::Executor;
-pub use task::TaskFactory;
